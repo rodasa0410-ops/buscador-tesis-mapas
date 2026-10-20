@@ -128,16 +128,16 @@ function render() {
     normalizar(Object.values(m).join(" ")).includes(consulta)
   );
 
-  document.getElementById("tabla-tesis").innerHTML = tesisFiltradas.map(t => `
-    <tr>
-      <td>${t.numero_tesis || ""}</td>
-      <td>${t.nombre_tesis || ""}</td>
-      <td>${t.carrera || ""}</td>
-      <td>${t.anio || ""}</td>
-      <td>${t.ubicacion || ""}</td>
-    </tr>
-  `).join("");
-
+document.getElementById("tabla-tesis").innerHTML = tesisFiltradas.map(t => `
+  <tr>
+    <td>${t.numero_tesis || ""}</td>
+    <td>${t.nombre_tesis || ""}</td>
+    <td>${t.nombre_titulado || ""}</td>
+    <td>${t.carrera || ""}</td>
+    <td>${t.anio || ""}</td>
+    <td>${t.ubicacion || ""}</td>
+  </tr>
+`).join("");
   document.getElementById("tabla-mapas").innerHTML = mapasFiltrados.map(m => `
     <tr>
       <td>${m.clave_mapa || ""}</td>
