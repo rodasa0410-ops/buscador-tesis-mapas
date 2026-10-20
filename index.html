@@ -36,11 +36,11 @@
   }
 
   .lobo {
-    width: 78px;
-    height: 78px;
+    width: 80px;
+    height: 80px;
     background: #fff;
     border-radius: 50%;
-    padding: 7px;
+    padding: 8px;
     flex-shrink: 0;
     box-shadow: 0 3px 10px rgba(0, 0, 0, .25);
   }
@@ -91,6 +91,13 @@
   }
 
   .filtros {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .filtros-mapas {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
@@ -182,7 +189,8 @@
       text-align: center;
     }
 
-    .filtros {
+    .filtros,
+    .filtros-mapas {
       grid-template-columns: 1fr;
     }
 
@@ -203,10 +211,10 @@
       <path d="M28 52 C28 70 38 82 50 82 C62 82 72 70 72 52 C72 40 62 34 50 34 C38 34 28 40 28 52 Z" fill="#b8bfc7"/>
       <path d="M38 38 L34 22 L46 34 Z" fill="#8d959e"/>
       <path d="M62 38 L66 22 L54 34 Z" fill="#8d959e"/>
-      ircle cx="41" cy="55" r="4.5" fill="#1e3a8a"/>
-      ircle cx="59" cy="55" r="4.5" fill="#1e3a8a"/>
-      ircle cx="42.5" cy="53.5" r="1.4" fill="#fff"/>
-      ircle cx="60.5" cy="53.5" r="1.4" fill="#fff"/>
+      <circle cx="41" cy="55" r="4.5" fill="#1e3a8a"/>
+      <circle cx="59" cy="55" r="4.5" fill="#1e3a8a"/>
+      <circle cx="42.5" cy="53.5" r="1.4" fill="#fff"/>
+      <circle cx="60.5" cy="53.5" r="1.4" fill="#fff"/>
       <path d="M44 68 Q50 74 56 68" stroke="#4b5563" stroke-width="3" fill="none" stroke-linecap="round"/>
       <ellipse cx="50" cy="64" rx="4" ry="3" fill="#6b7280"/>
     </svg>
@@ -238,11 +246,21 @@
     </select>
   </div>
 
+  <div id="filtros-mapas" class="filtros-mapas oculto">
+    <select id="filtro-tipo-mapa" onchange="render()">
+      <option value="">Todos los tipos de mapa</option>
+    </select>
+
+    <select id="filtro-escala" onchange="render()">
+      <option value="">Todas las escalas</option>
+    </select>
+  </div>
+
   <input
     id="buscador"
     class="buscador-general"
     type="search"
-    placeholder="Búsqueda general: número, título, titulado, carrera, año, clave, estado o ubicación..."
+    placeholder="Búsqueda general: número, título, titulado, carrera, año, clave, tipo, escala, estado o ubicación..."
     oninput="render()"
   >
 
@@ -271,6 +289,8 @@
       <thead>
         <tr>
           <th>Clave del mapa</th>
+          <th>Tipo de mapa</th>
+          <th>Escala</th>
           <th>Estado</th>
           <th>Ubicación</th>
         </tr>
@@ -353,26 +373,48 @@ function normalizar(texto) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
-function cargarCarreras() {
-  const select = document.getElementById("filtro-carrera");
-  const carreras = [...new Set(
-    tesis
-      .map(t => (t.carrera || "").trim())
-      .filter(carrera => carrera !== "")
-  )].sort();
+function llenarSelect(id, valores, textoTodas) {
+  const select = document.getElementById(id);
+  select.innerHTML = `<option value="">${textoTodas}</option>`;
 
-  carreras.forEach(carrera => {
-    const opcion = document.createElement("option");
-    opcion.value = carrera;
-    opcion.textContent = carrera;
-    select.appendChild(opcion);
-  });
+  [...new Set(valores.filter(valor => valor !== ""))]
+    .sort()
+    .forEach(valor => {
+      const opcion = document.createElement("option");
+      opcion.value = valor;
+      opcion.textContent = valor;
+      select.appendChild(opcion);
+    });
+}
+
+function cargarFiltros() {
+  llenarSelect(
+    "filtro-carrera",
+    tesis.map(t => (t.carrera || "").trim()),
+    "Todas las carreras"
+  );
+
+  llenarSelect(
+    "filtro-tipo-mapa",
+    mapas.map(m => (m.tipo_mapa || "").trim()),
+    "Todos los tipos de mapa"
+  );
+
+  llenarSelect(
+    "filtro-escala",
+    mapas.map(m => (m.escala || "").trim()),
+    "Todas las escalas"
+  );
 }
 
 function render() {
   const busquedaGeneral = normalizar(document.getElementById("buscador").value);
+
   const filtroTitulo = normalizar(document.getElementById("filtro-titulo").value);
   const filtroCarrera = document.getElementById("filtro-carrera").value;
+
+  const filtroTipoMapa = document.getElementById("filtro-tipo-mapa").value;
+  const filtroEscala = document.getElementById("filtro-escala").value;
 
   const tesisFiltradas = tesis.filter(t => {
     const coincideBusquedaGeneral =
@@ -387,9 +429,18 @@ function render() {
     return coincideBusquedaGeneral && coincideTitulo && coincideCarrera;
   });
 
-  const mapasFiltrados = mapas.filter(m =>
-    normalizar(Object.values(m).join(" ")).includes(busquedaGeneral)
-  );
+  const mapasFiltrados = mapas.filter(m => {
+    const coincideBusquedaGeneral =
+      normalizar(Object.values(m).join(" ")).includes(busquedaGeneral);
+
+    const coincideTipo =
+      filtroTipoMapa === "" || (m.tipo_mapa || "").trim() === filtroTipoMapa;
+
+    const coincideEscala =
+      filtroEscala === "" || (m.escala || "").trim() === filtroEscala;
+
+    return coincideBusquedaGeneral && coincideTipo && coincideEscala;
+  });
 
   document.getElementById("tabla-tesis").innerHTML = tesisFiltradas.map(t => `
     <tr>
@@ -405,6 +456,8 @@ function render() {
   document.getElementById("tabla-mapas").innerHTML = mapasFiltrados.map(m => `
     <tr>
       <td>${m.clave_mapa || ""}</td>
+      <td>${m.tipo_mapa || ""}</td>
+      <td>${m.escala || ""}</td>
       <td>${m.estado || ""}</td>
       <td>${m.ubicacion || ""}</td>
     </tr>
@@ -420,7 +473,9 @@ function render() {
 function showTab(tab, boton) {
   document.getElementById("seccion-tesis").classList.toggle("oculto", tab !== "tesis");
   document.getElementById("seccion-mapas").classList.toggle("oculto", tab !== "mapas");
+
   document.getElementById("filtros-tesis").classList.toggle("oculto", tab !== "tesis");
+  document.getElementById("filtros-mapas").classList.toggle("oculto", tab !== "mapas");
 
   document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
   boton.classList.add("active");
@@ -429,7 +484,6 @@ function showTab(tab, boton) {
 (async function iniciar() {
   try {
     tesis = await cargarCSV(URL_TESIS);
-    cargarCarreras();
     document.getElementById("estado-tesis").textContent =
       `${tesis.length} tesis cargadas`;
   } catch (error) {
@@ -446,6 +500,7 @@ function showTab(tab, boton) {
       "Error al cargar la hoja de mapas. Revisa que la URL CSV sea correcta.";
   }
 
+  cargarFiltros();
   render();
 })();
 </script>
