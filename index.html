@@ -1,509 +1,674 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Buscador de Tesis y Mapas</title>
-<style>
-  :root {
-    --azul-rey: #1e3a8a;
-    --azul-rey-oscuro: #152a66;
-    --azul-claro: #e8eefb;
-    --plata: #d9dde3;
-    --plata-claro: #f2f4f7;
-    --texto: #1f2937;
-  }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Buscador de Tesis y Mapas</title>
 
-  * {
-    box-sizing: border-box;
-  }
-
-  body {
-    font-family: "Segoe UI", Arial, sans-serif;
-    margin: 0;
-    background: var(--plata-claro);
-    color: var(--texto);
-  }
-
-  header {
-    background: linear-gradient(135deg, var(--azul-rey), var(--azul-rey-oscuro));
-    color: #fff;
-    padding: 22px 20px;
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, .18);
-  }
-
-  .lobo {
-    width: 80px;
-    height: 80px;
-    background: #fff;
-    border-radius: 50%;
-    padding: 8px;
-    flex-shrink: 0;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, .25);
-  }
-
-  header h1 {
-    margin: 0;
-    font-size: 26px;
-  }
-
-  header p {
-    margin: 5px 0 0;
-    font-size: 14px;
-    color: var(--plata);
-  }
-
-  main {
-    max-width: 1150px;
-    margin: 25px auto;
-    padding: 0 16px;
-  }
-
-  .tabs {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 18px;
-  }
-
-  .tab {
-    padding: 11px 22px;
-    border: none;
-    border-radius: 10px;
-    background: var(--plata);
-    color: var(--azul-rey-oscuro);
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: .2s;
-  }
-
-  .tab:hover {
-    background: #c7ccd4;
-  }
-
-  .tab.active {
-    background: var(--azul-rey);
-    color: #fff;
-    box-shadow: 0 3px 8px rgba(30, 58, 138, .35);
-  }
-
-  .filtros {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 14px;
-  }
-
-  .filtros-mapas {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 14px;
-  }
-
-  input, select {
-    width: 100%;
-    padding: 12px 14px;
-    border: 1px solid var(--plata);
-    border-radius: 10px;
-    background: #fff;
-    font-size: 15px;
-    color: var(--texto);
-    outline: none;
-    transition: .2s;
-  }
-
-  input:focus, select:focus {
-    border-color: var(--azul-rey);
-    box-shadow: 0 0 0 3px rgba(30, 58, 138, .15);
-  }
-
-  .buscador-general {
-    margin-bottom: 18px;
-  }
-
-  .tarjeta {
-    background: #fff;
-    border: 1px solid var(--plata);
-    border-radius: 14px;
-    padding: 18px;
-    box-shadow: 0 3px 12px rgba(0, 0, 0, .06);
-  }
-
-  .status {
-    font-size: 14px;
-    color: var(--azul-rey-oscuro);
-    background: var(--azul-claro);
-    border-left: 5px solid var(--azul-rey);
-    padding: 10px 12px;
-    border-radius: 8px;
-    margin-bottom: 14px;
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    border-radius: 10px;
-    overflow: hidden;
-  }
-
-  th {
-    background: var(--azul-rey);
-    color: #fff;
-    padding: 12px 10px;
-    text-align: left;
-    font-size: 14px;
-  }
-
-  td {
-    padding: 11px 10px;
-    border-bottom: 1px solid var(--plata);
-    font-size: 14px;
-  }
-
-  tbody tr:nth-child(even) {
-    background: var(--plata-claro);
-  }
-
-  tbody tr:hover {
-    background: var(--azul-claro);
-  }
-
-  .oculto {
-    display: none;
-  }
-
-  footer {
-    text-align: center;
-    padding: 18px;
-    color: #6b7280;
-    font-size: 13px;
-  }
-
-  @media (max-width: 720px) {
-    header {
-      flex-direction: column;
-      text-align: center;
+  <style>
+    :root {
+      --azul-rey: #2146b5;
+      --azul-oscuro: #142b70;
+      --azul-claro: #edf2ff;
+      --plata: #cbd0d8;
+      --plata-claro: #f2f4f7;
+      --texto: #243047;
     }
 
-    .filtros,
-    .filtros-mapas {
-      grid-template-columns: 1fr;
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: var(--plata-claro);
+      color: var(--texto);
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 22px;
+      background: linear-gradient(
+        135deg,
+        var(--azul-rey),
+        var(--azul-oscuro)
+      );
+      color: white;
+      border-bottom: 5px solid var(--plata);
+      box-shadow: 0 4px 14px rgb(0 0 0 / 12%);
+    }
+
+    /* Se conserva la imagen original sin recortes ni filtros. */
+    .logo-biblioteca {
+      display: block;
+      width: 110px;
+      height: auto;
+      flex-shrink: 0;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: clamp(22px, 3vw, 32px);
+    }
+
+    header p {
+      margin: 8px 0 0;
+      color: #e2e7f2;
+      line-height: 1.5;
+    }
+
+    main {
+      max-width: 1200px;
+      margin: 28px auto;
+      padding: 0 16px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    button {
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .tab,
+    .boton-limpiar {
+      padding: 12px 22px;
+      border: 1px solid var(--plata);
+      border-radius: 10px;
+      background: #e2e5eb;
+      color: var(--azul-oscuro);
+      font-weight: 600;
+    }
+
+    .tab:hover,
+    .boton-limpiar:hover {
+      background: #d4d9e3;
+    }
+
+    .tab.active {
+      background: var(--azul-rey);
+      border-color: var(--azul-rey);
+      color: white;
+      box-shadow: 0 4px 10px rgb(33 70 181 / 20%);
+    }
+
+    .panel-filtros,
+    .tarjeta {
+      padding: 20px;
+      border: 1px solid var(--plata);
+      border-radius: 16px;
+      background: white;
+      box-shadow: 0 4px 16px rgb(0 0 0 / 5%);
+    }
+
+    .panel-filtros {
+      margin-bottom: 20px;
+    }
+
+    .filtros {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 7px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--azul-oscuro);
+    }
+
+    input,
+    select {
+      width: 100%;
+      min-height: 46px;
+      padding: 11px 13px;
+      border: 1px solid var(--plata);
+      border-radius: 10px;
+      background: white;
+      color: var(--texto);
+      font: inherit;
+    }
+
+    input:focus,
+    select:focus,
+    button:focus-visible {
+      outline: 3px solid #a9bef9;
+      outline-offset: 2px;
+    }
+
+    .acciones {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 14px;
+    }
+
+    .status {
+      margin: 0 0 16px;
+      padding: 12px 14px;
+      border-left: 5px solid var(--azul-rey);
+      border-radius: 8px;
+      background: var(--azul-claro);
+      color: var(--azul-oscuro);
+      line-height: 1.5;
+    }
+
+    .status.error {
+      border-left-color: #b42318;
+      background: #fff1f0;
+      color: #8a1c13;
+    }
+
+    .tabla-contenedor {
+      overflow-x: auto;
+      border: 1px solid var(--plata);
+      border-radius: 10px;
     }
 
     table {
-      display: block;
-      overflow-x: auto;
-      white-space: nowrap;
+      width: 100%;
+      border-collapse: collapse;
     }
-  }
-</style>
+
+    th,
+    td {
+      padding: 13px 12px;
+      text-align: left;
+      vertical-align: top;
+      font-size: 14px;
+    }
+
+    th {
+      background: var(--azul-rey);
+      color: white;
+    }
+
+    td {
+      border-bottom: 1px solid #e2e5eb;
+      overflow-wrap: anywhere;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #f5f6f9;
+    }
+
+    tbody tr:hover {
+      background: var(--azul-claro);
+    }
+
+    .sin-resultados {
+      text-align: center;
+      padding: 28px;
+      color: #58667d;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    footer {
+      padding: 24px 16px;
+      text-align: center;
+      color: #58667d;
+      font-size: 13px;
+    }
+
+    @media (max-width: 720px) {
+      header {
+        padding: 16px;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .logo-biblioteca {
+        width: 80px;
+      }
+
+      header h1 {
+        font-size: 20px;
+      }
+
+      header p {
+        font-size: 13px;
+      }
+
+      .filtros {
+        grid-template-columns: 1fr;
+      }
+
+      .panel-filtros,
+      .tarjeta {
+        padding: 14px;
+      }
+
+      table {
+        min-width: 650px;
+      }
+
+      .tabs .tab {
+        flex: 1;
+      }
+    }
+  </style>
 </head>
+
 <body>
-
-<header>
-  <div class="lobo">
-    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-      <path d="M25 20 L38 38 L62 38 L75 20 L72 52 C72 70 62 82 50 82 C38 82 28 70 28 52 Z" fill="#9aa3ad"/>
-      <path d="M28 52 C28 70 38 82 50 82 C62 82 72 70 72 52 C72 40 62 34 50 34 C38 34 28 40 28 52 Z" fill="#b8bfc7"/>
-      <path d="M38 38 L34 22 L46 34 Z" fill="#8d959e"/>
-      <path d="M62 38 L66 22 L54 34 Z" fill="#8d959e"/>
-      <circle cx="41" cy="55" r="4.5" fill="#1e3a8a"/>
-      <circle cx="59" cy="55" r="4.5" fill="#1e3a8a"/>
-      <circle cx="42.5" cy="53.5" r="1.4" fill="#fff"/>
-      <circle cx="60.5" cy="53.5" r="1.4" fill="#fff"/>
-      <path d="M44 68 Q50 74 56 68" stroke="#4b5563" stroke-width="3" fill="none" stroke-linecap="round"/>
-      <ellipse cx="50" cy="64" rx="4" ry="3" fill="#6b7280"/>
-    </svg>
-  </div>
-
-  <div>
-    <h1>Buscador de Tesis y Mapas</h1>
-    <p>Consulta rápida de tesis tituladas y mapas del plantel</p>
-  </div>
-</header>
-
-<main>
-
-  <div class="tabs">
-    <button class="tab active" onclick="showTab('tesis', this)">Tesis</button>
-    <button class="tab" onclick="showTab('mapas', this)">Mapas</button>
-  </div>
-
-  <div id="filtros-tesis" class="filtros">
-    <input
-      id="filtro-titulo"
-      type="text"
-      placeholder="Filtrar por título de la tesis..."
-      oninput="render()"
+  <header>
+    <img
+      class="logo-biblioteca"
+      src="./logo-biblioteca.jpeg"
+      alt="Logo de la Biblioteca Ing. Daniel Gutiérrez Gutiérrez"
     >
 
-    <select id="filtro-carrera" onchange="render()">
-      <option value="">Todas las carreras</option>
-    </select>
-  </div>
+    <div>
+      <h1>Buscador de Tesis y Mapas</h1>
+      <p>Consulta el catálogo y encuentra la ubicación de los materiales.</p>
+    </div>
+  </header>
 
-  <div id="filtros-mapas" class="filtros-mapas oculto">
-    <select id="filtro-tipo-mapa" onchange="render()">
-      <option value="">Todos los tipos de mapa</option>
-    </select>
+  <main>
+    <nav class="tabs" aria-label="Seleccionar catálogo">
+      <button
+        id="boton-tesis"
+        class="tab active"
+        type="button"
+        aria-pressed="true"
+        onclick="mostrarCatalogo('tesis')"
+      >
+        Tesis
+      </button>
 
-    <select id="filtro-escala" onchange="render()">
-      <option value="">Todas las escalas</option>
-    </select>
-  </div>
+      <button
+        id="boton-mapas"
+        class="tab"
+        type="button"
+        aria-pressed="false"
+        onclick="mostrarCatalogo('mapas')"
+      >
+        Mapas
+      </button>
+    </nav>
 
-  <input
-    id="buscador"
-    class="buscador-general"
-    type="search"
-    placeholder="Búsqueda general: número, título, titulado, carrera, año, clave, tipo, escala, estado o ubicación..."
-    oninput="render()"
-  >
+    <section class="panel-filtros" aria-label="Filtros de búsqueda">
+      <div id="filtros-tesis" class="filtros">
+        <div>
+          <label for="filtro-titulo">Título de la tesis</label>
+          <input
+            id="filtro-titulo"
+            type="search"
+            placeholder="Escribe parte del título..."
+            oninput="render()"
+          >
+        </div>
 
-  <div id="seccion-tesis" class="tarjeta">
-    <div class="status" id="estado-tesis">Cargando tesis...</div>
+        <div>
+          <label for="filtro-carrera">Carrera</label>
+          <select id="filtro-carrera" onchange="render()">
+            <option value="">Todas las carreras</option>
+          </select>
+        </div>
+      </div>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Número de tesis</th>
-          <th>Nombre de tesis</th>
-          <th>Nombre del titulado</th>
-          <th>Carrera</th>
-          <th>Año</th>
-          <th>Ubicación</th>
-        </tr>
-      </thead>
-      <tbody id="tabla-tesis"></tbody>
-    </table>
-  </div>
+      <div id="filtros-mapas" class="filtros" hidden>
+        <div>
+          <label for="filtro-tipo-mapa">Tipo de mapa</label>
+          <select id="filtro-tipo-mapa" onchange="render()">
+            <option value="">Todos los tipos de mapa</option>
+          </select>
+        </div>
 
-  <div id="seccion-mapas" class="tarjeta oculto">
-    <div class="status" id="estado-mapas">Cargando mapas...</div>
+        <div>
+          <label for="filtro-escala">Escala</label>
+          <select id="filtro-escala" onchange="render()">
+            <option value="">Todas las escalas</option>
+          </select>
+        </div>
+      </div>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Clave del mapa</th>
-          <th>Tipo de mapa</th>
-          <th>Escala</th>
-          <th>Estado</th>
-          <th>Ubicación</th>
-        </tr>
-      </thead>
-      <tbody id="tabla-mapas"></tbody>
-    </table>
-  </div>
+      <div>
+        <label for="buscador">Búsqueda general</label>
+        <input
+          id="buscador"
+          type="search"
+          placeholder="Buscar en el catálogo de tesis..."
+          oninput="render()"
+        >
+      </div>
 
-</main>
+      <div class="acciones">
+        <button
+          class="boton-limpiar"
+          type="button"
+          onclick="limpiarFiltros()"
+        >
+          Limpiar filtros
+        </button>
+      </div>
+    </section>
 
-<footer>
-  Buscador institucional de tesis y mapas
-</footer>
+    <section id="seccion-tesis" class="tarjeta" aria-label="Resultados de tesis">
+      <p id="estado-tesis" class="status" role="status" aria-live="polite">
+        Cargando tesis...
+      </p>
 
-<script>
-// SUSTITUYE ESTAS URLS por las de "Publicar en la web" como CSV
-const URL_TESIS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTGPGsoufXmVyYnyeAbPBFEoBVp-_7Q3R45Hr4lOs_FaWdAWmSkXPIkwskHt5hRRw/pub?output=csv";
-const URL_MAPAS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTpgYSzQaFIQhRiu6jgT7Du92QuFuXPf5-34QCuq8Yv_ZO3qlQzNh6bh9P4GT3_qeKMN03YzTAl4kRk/pub?output=csv";
+      <div class="tabla-contenedor">
+        <table aria-label="Catálogo de tesis">
+          <thead>
+            <tr>
+              <th scope="col">Número de tesis</th>
+              <th scope="col">Nombre de tesis</th>
+              <th scope="col">Nombre del titulado</th>
+              <th scope="col">Carrera</th>
+              <th scope="col">Año</th>
+              <th scope="col">Ubicación</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-tesis"></tbody>
+        </table>
+      </div>
+    </section>
 
-let tesis = [];
-let mapas = [];
+    <section
+      id="seccion-mapas"
+      class="tarjeta"
+      aria-label="Resultados de mapas"
+      hidden
+    >
+      <p id="estado-mapas" class="status" role="status" aria-live="polite">
+        Cargando mapas...
+      </p>
 
-async function cargarCSV(url) {
-  const respuesta = await fetch(url);
-  const texto = await respuesta.text();
-  return parsearCSV(texto);
-}
+      <div class="tabla-contenedor">
+        <table aria-label="Catálogo de mapas">
+          <thead>
+            <tr>
+              <th scope="col">Clave del mapa</th>
+              <th scope="col">Tipo de mapa</th>
+              <th scope="col">Escala</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Ubicación</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-mapas"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
 
-function parsearCSV(texto) {
-  const lineas = texto.trim().split(/\r?\n/);
-  const encabezados = dividirLineaCSV(lineas[0]);
+  <footer>
+    Biblioteca · Catálogo de tesis y mapas
+  </footer>
 
-  return lineas
-    .slice(1)
-    .filter(linea => linea.trim() !== "")
-    .map(linea => {
-      const valores = dividirLineaCSV(linea);
-      const objeto = {};
+  <script>
+    // Coloca aquí los enlaces publicados en formato CSV.
+    const URL_TESIS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTGPGsoufXmVyYnyeAbPBFEoBVp-_7Q3R45Hr4lOs_FaWdAWmSkXPIkwskHt5hRRw/pub?output=csv";
+    const URL_MAPAS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTpgYSzQaFIQhRiu6jgT7Du92QuFuXPf5-34QCuq8Yv_ZO3qlQzNh6bh9P4GT3_qeKMN03YzTAl4kRk/pub?output=csv";
 
-      encabezados.forEach((encabezado, indice) => {
-        objeto[encabezado.trim()] = (valores[indice] || "").trim();
+    const CAMPOS_TESIS = [
+      "numero_tesis",
+      "nombre_tesis",
+      "nombre_titulado",
+      "carrera",
+      "anio",
+      "ubicacion"
+    ];
+
+    const CAMPOS_MAPAS = [
+      "clave_mapa",
+      "tipo_mapa",
+      "escala",
+      "estado",
+      "ubicacion"
+    ];
+
+    const catalogos = {
+      tesis: {
+        datos: [],
+        cargando: true,
+        error: ""
+      },
+      mapas: {
+        datos: [],
+        cargando: true,
+        error: ""
+      }
+    };
+
+    let catalogoActivo = "tesis";
+
+    function normalizar(valor) {
+      return String(valor ?? "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function normalizarEncabezado(valor) {
+      return normalizar(valor).replace(/\s+/g, "_");
+    }
+
+    // Lee comas, comillas escapadas y saltos de línea dentro de celdas.
+    function parsearCSV(texto) {
+      const contenido = texto.replace(/^\uFEFF/, "");
+      const filas = [];
+      let fila = [];
+      let celda = "";
+      let entreComillas = false;
+
+      for (let i = 0; i < contenido.length; i++) {
+        const caracter = contenido[i];
+
+        if (caracter === '"') {
+          if (entreComillas && contenido[i + 1] === '"') {
+            celda += '"';
+            i++;
+          } else {
+            entreComillas = !entreComillas;
+          }
+        } else if (caracter === "," && !entreComillas) {
+          fila.push(celda);
+          celda = "";
+        } else if (
+          (caracter === "\n" || caracter === "\r") &&
+          !entreComillas
+        ) {
+          if (caracter === "\r" && contenido[i + 1] === "\n") {
+            i++;
+          }
+
+          fila.push(celda);
+
+          if (fila.some(valor => valor.trim() !== "")) {
+            filas.push(fila);
+          }
+
+          fila = [];
+          celda = "";
+        } else {
+          celda += caracter;
+        }
+      }
+
+      if (entreComillas) {
+        throw new Error("El CSV contiene comillas sin cerrar.");
+      }
+
+      fila.push(celda);
+
+      if (fila.some(valor => valor.trim() !== "")) {
+        filas.push(fila);
+      }
+
+      if (filas.length === 0) {
+        throw new Error("La hoja está vacía o no contiene encabezados.");
+      }
+
+      const encabezados = filas.shift().map(normalizarEncabezado);
+
+      if (new Set(encabezados).size !== encabezados.length) {
+        throw new Error("Hay encabezados duplicados en la hoja.");
+      }
+
+      const datos = filas.map(valores =>
+        Object.fromEntries(
+          encabezados.map((campo, indice) => [
+            campo,
+            (valores[indice] ?? "").trim()
+          ])
+        )
+      );
+
+      return { encabezados, datos };
+    }
+
+    async function cargarCSV(url, camposRequeridos) {
+      if (!url || url.includes("PEGA_AQUI")) {
+        throw new Error("Falta configurar el enlace CSV de esta hoja.");
+      }
+
+      const respuesta = await fetch(url);
+
+      if (!respuesta.ok) {
+        throw new Error(
+          `No se pudo descargar la hoja. Código HTTP: ${respuesta.status}.`
+        );
+      }
+
+      const texto = await respuesta.text();
+
+      if (/^\s*</.test(texto)) {
+        throw new Error(
+          "El enlace devolvió una página HTML. Usa el enlace publicado como CSV."
+        );
+      }
+
+      const { encabezados, datos } = parsearCSV(texto);
+
+      const faltantes = camposRequeridos.filter(
+        campo => !encabezados.includes(campo)
+      );
+
+      if (faltantes.length > 0) {
+        throw new Error(
+          "Faltan estas columnas: " + faltantes.join(", ") + "."
+        );
+      }
+
+      // Conserva solamente los campos utilizados por el catálogo.
+      return datos
+        .map(fila =>
+          Object.fromEntries(
+            camposRequeridos.map(campo => [campo, fila[campo] ?? ""])
+          )
+        )
+        .filter(fila => Object.values(fila).some(valor => valor !== ""));
+    }
+
+    function llenarSelect(id, valores, textoInicial) {
+      const select = document.getElementById(id);
+      const opciones = new Map();
+
+      valores.forEach(valor => {
+        const etiqueta = String(valor ?? "").trim();
+        const clave = normalizar(etiqueta);
+
+        if (clave && !opciones.has(clave)) {
+          opciones.set(clave, etiqueta);
+        }
       });
 
-      return objeto;
-    });
-}
+      select.replaceChildren(new Option(textoInicial, ""));
 
-function dividirLineaCSV(linea) {
-  const resultado = [];
-  let actual = "";
-  let entreComillas = false;
-
-  for (let i = 0; i < linea.length; i++) {
-    const caracter = linea[i];
-
-    if (caracter === '"') {
-      if (entreComillas && linea[i + 1] === '"') {
-        actual += '"';
-        i++;
-      } else {
-        entreComillas = !entreComillas;
-      }
-    } else if (caracter === "," && !entreComillas) {
-      resultado.push(actual);
-      actual = "";
-    } else {
-      actual += caracter;
+      [...opciones.entries()]
+        .sort((a, b) =>
+          a[1].localeCompare(b[1], "es", {
+            numeric: true,
+            sensitivity: "base"
+          })
+        )
+        .forEach(([clave, etiqueta]) => {
+          select.add(new Option(etiqueta, clave));
+        });
     }
-  }
 
-  resultado.push(actual);
-  return resultado;
-}
+    function cargarFiltros(tipo) {
+      if (tipo === "tesis") {
+        llenarSelect(
+          "filtro-carrera",
+          catalogos.tesis.datos.map(t => t.carrera),
+          "Todas las carreras"
+        );
+      } else {
+        llenarSelect(
+          "filtro-tipo-mapa",
+          catalogos.mapas.datos.map(m => m.tipo_mapa),
+          "Todos los tipos de mapa"
+        );
 
-function normalizar(texto) {
-  return (texto || "")
-    .toString()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
+        llenarSelect(
+          "filtro-escala",
+          catalogos.mapas.datos.map(m => m.escala),
+          "Todas las escalas"
+        );
+      }
+    }
 
-function llenarSelect(id, valores, textoTodas) {
-  const select = document.getElementById(id);
-  select.innerHTML = `<option value="">${textoTodas}</option>`;
+    function mostrarTabla(id, datos, campos, mensajeVacio) {
+      const cuerpo = document.getElementById(id);
+      const fragmento = document.createDocumentFragment();
 
-  [...new Set(valores.filter(valor => valor !== ""))]
-    .sort()
-    .forEach(valor => {
-      const opcion = document.createElement("option");
-      opcion.value = valor;
-      opcion.textContent = valor;
-      select.appendChild(opcion);
-    });
-}
+      if (datos.length === 0) {
+        const fila = document.createElement("tr");
+        const celda = document.createElement("td");
 
-function cargarFiltros() {
-  llenarSelect(
-    "filtro-carrera",
-    tesis.map(t => (t.carrera || "").trim()),
-    "Todas las carreras"
-  );
+        celda.colSpan = campos.length;
+        celda.className = "sin-resultados";
+        celda.textContent = mensajeVacio;
 
-  llenarSelect(
-    "filtro-tipo-mapa",
-    mapas.map(m => (m.tipo_mapa || "").trim()),
-    "Todos los tipos de mapa"
-  );
+        fila.appendChild(celda);
+        fragmento.appendChild(fila);
+      } else {
+        datos.forEach(registro => {
+          const fila = document.createElement("tr");
 
-  llenarSelect(
-    "filtro-escala",
-    mapas.map(m => (m.escala || "").trim()),
-    "Todas las escalas"
-  );
-}
+          campos.forEach(campo => {
+            const celda = document.createElement("td");
+            celda.textContent = registro[campo] || "—";
+            fila.appendChild(celda);
+          });
 
-function render() {
-  const busquedaGeneral = normalizar(document.getElementById("buscador").value);
+          fragmento.appendChild(fila);
+        });
+      }
 
-  const filtroTitulo = normalizar(document.getElementById("filtro-titulo").value);
-  const filtroCarrera = document.getElementById("filtro-carrera").value;
+      cuerpo.replaceChildren(fragmento);
+    }
 
-  const filtroTipoMapa = document.getElementById("filtro-tipo-mapa").value;
-  const filtroEscala = document.getElementById("filtro-escala").value;
+    function actualizarEstado(tipo, cantidad) {
+      const catalogo = catalogos[tipo];
+      const estado = document.getElementById("estado-" + tipo);
 
-  const tesisFiltradas = tesis.filter(t => {
-    const coincideBusquedaGeneral =
-      normalizar(Object.values(t).join(" ")).includes(busquedaGeneral);
+      estado.classList.toggle("error", Boolean(catalogo.error));
 
-    const coincideTitulo =
-      normalizar(t.nombre_tesis).includes(filtroTitulo);
+      if (catalogo.cargando) {
+        estado.textContent = `Cargando ${tipo}...`;
+      } else if (catalogo.error) {
+        estado.textContent = catalogo.error;
+      } else {
+        estado.textContent =
+          `${cantidad} de ${catalogo.datos.length} registros encontrados.`;
+      }
+    }
 
-    const coincideCarrera =
-      filtroCarrera === "" || (t.carrera || "").trim() === filtroCarrera;
-
-    return coincideBusquedaGeneral && coincideTitulo && coincideCarrera;
-  });
-
-  const mapasFiltrados = mapas.filter(m => {
-    const coincideBusquedaGeneral =
-      normalizar(Object.values(m).join(" ")).includes(busquedaGeneral);
-
-    const coincideTipo =
-      filtroTipoMapa === "" || (m.tipo_mapa || "").trim() === filtroTipoMapa;
-
-    const coincideEscala =
-      filtroEscala === "" || (m.escala || "").trim() === filtroEscala;
-
-    return coincideBusquedaGeneral && coincideTipo && coincideEscala;
-  });
-
-  document.getElementById("tabla-tesis").innerHTML = tesisFiltradas.map(t => `
-    <tr>
-      <td>${t.numero_tesis || ""}</td>
-      <td>${t.nombre_tesis || ""}</td>
-      <td>${t.nombre_titulado || ""}</td>
-      <td>${t.carrera || ""}</td>
-      <td>${t.anio || ""}</td>
-      <td>${t.ubicacion || ""}</td>
-    </tr>
-  `).join("");
-
-  document.getElementById("tabla-mapas").innerHTML = mapasFiltrados.map(m => `
-    <tr>
-      <td>${m.clave_mapa || ""}</td>
-      <td>${m.tipo_mapa || ""}</td>
-      <td>${m.escala || ""}</td>
-      <td>${m.estado || ""}</td>
-      <td>${m.ubicacion || ""}</td>
-    </tr>
-  `).join("");
-
-  document.getElementById("estado-tesis").textContent =
-    `${tesisFiltradas.length} tesis encontradas`;
-
-  document.getElementById("estado-mapas").textContent =
-    `${mapasFiltrados.length} mapas encontrados`;
-}
-
-function showTab(tab, boton) {
-  document.getElementById("seccion-tesis").classList.toggle("oculto", tab !== "tesis");
-  document.getElementById("seccion-mapas").classList.toggle("oculto", tab !== "mapas");
-
-  document.getElementById("filtros-tesis").classList.toggle("oculto", tab !== "tesis");
-  document.getElementById("filtros-mapas").classList.toggle("oculto", tab !== "mapas");
-
-  document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
-  boton.classList.add("active");
-}
-
-(async function iniciar() {
-  try {
-    tesis = await cargarCSV(URL_TESIS);
-    document.getElementById("estado-tesis").textContent =
-      `${tesis.length} tesis cargadas`;
-  } catch (error) {
-    document.getElementById("estado-tesis").textContent =
-      "Error al cargar la hoja de tesis. Revisa que la URL CSV sea correcta.";
-  }
-
-  try {
-    mapas = await cargarCSV(URL_MAPAS);
-    document.getElementById("estado-mapas").textContent =
-      `${mapas.length} mapas cargados`;
-  } catch (error) {
-    document.getElementById("estado-mapas").textContent =
-      "Error al cargar la hoja de mapas. Revisa que la URL CSV sea correcta.";
-  }
-
-  cargarFiltros();
-  render();
-})();
-</script>
-
-</body>
-</html>
+    function render()
