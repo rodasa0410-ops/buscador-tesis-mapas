@@ -5,17 +5,92 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Buscador de Tesis y Mapas</title>
 <style>
-  body { font-family: Arial, sans-serif; margin: 0; background: #f4f6f8; color: #222; }
-  header { background: #123c69; color: #fff; padding: 20px; text-align: center; }
-  main { max-width: 1000px; margin: 20px auto; padding: 0 15px; }
-  .tabs { display: flex; gap: 10px; margin-bottom: 15px; }
-  button.tab { padding: 10px 18px; border: none; border-radius: 8px; cursor: pointer; background: #dfe6ee; }
-  button.tab.active { background: #123c69; color: #fff; }
-  input, select { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ccc; border-radius: 8px; }
-  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; }
-  th, td { padding: 10px; border-bottom: 1px solid #e3e3e3; text-align: left; }
-  th { background: #123c69; color: #fff; }
-  .status { margin: 10px 0; font-size: 14px; }
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background: #f4f6f8;
+    color: #222;
+  }
+
+  header {
+    background: #123c69;
+    color: #fff;
+    padding: 20px;
+    text-align: center;
+  }
+
+  main {
+    max-width: 1100px;
+    margin: 20px auto;
+    padding: 0 15px;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+
+  button.tab {
+    padding: 10px 18px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    background: #dfe6ee;
+    font-size: 15px;
+  }
+
+  button.tab.active {
+    background: #123c69;
+    color: #fff;
+  }
+
+  input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 15px;
+    box-sizing: border-box;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  th, td {
+    padding: 10px;
+    border-bottom: 1px solid #e3e3e3;
+    text-align: left;
+  }
+
+  th {
+    background: #123c69;
+    color: #fff;
+  }
+
+  tr:hover {
+    background: #f0f4f8;
+  }
+
+  .status {
+    margin: 10px 0;
+    font-size: 14px;
+    color: #444;
+  }
+
+  @media (max-width: 700px) {
+    table {
+      display: block;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+  }
 </style>
 </head>
 <body>
@@ -25,20 +100,28 @@
 </header>
 
 <main>
+
   <div class="tabs">
-    <button class="tab active" onclick="showTab('tesis')">Tesis</button>
-    <button class="tab" onclick="showTab('mapas')">Mapas</button>
+    <button class="tab active" onclick="showTab('tesis', this)">Tesis</button>
+    <button class="tab" onclick="showTab('mapas', this)">Mapas</button>
   </div>
 
-  <input id="buscador" type="search" placeholder="Buscar por número, título, carrera, año, clave, estado o ubicación..." oninput="render()">
+  <input
+    id="buscador"
+    type="search"
+    placeholder="Buscar por número, título, titulado, carrera, año, clave, estado o ubicación..."
+    oninput="render()"
+  >
 
   <div id="seccion-tesis">
     <div class="status" id="estado-tesis">Cargando tesis...</div>
+
     <table>
       <thead>
         <tr>
           <th>Número de tesis</th>
           <th>Nombre de tesis</th>
+          <th>Nombre del titulado</th>
           <th>Carrera</th>
           <th>Año</th>
           <th>Ubicación</th>
@@ -50,6 +133,7 @@
 
   <div id="seccion-mapas" style="display:none">
     <div class="status" id="estado-mapas">Cargando mapas...</div>
+
     <table>
       <thead>
         <tr>
@@ -61,12 +145,13 @@
       <tbody id="tabla-mapas"></tbody>
     </table>
   </div>
+
 </main>
 
 <script>
 // SUSTITUYE ESTAS URLS por las de "Publicar en la web" como CSV
-const URL_TESIS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTGPGsoufXmVyYnyeAbPBFEoBVp-_7Q3R45Hr4lOs_FaWdAWmSkXPIkwskHt5hRRw/pub?output=csv";
-const URL_MAPAS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTpgYSzQaFIQhRiu6jgT7Du92QuFuXPf5-34QCuq8Yv_ZO3qlQzNh6bh9P4GT3_qeKMN03YzTAl4kRk/pub?output=csv";
+const URL_TESIS = "PEGA_AQUI_LA_URL_CSV_DE_TESIS";
+const URL_MAPAS = "PEGA_AQUI_LA_URL_CSV_DE_MAPAS";
 
 let tesis = [];
 let mapas = [];
@@ -80,12 +165,20 @@ async function cargarCSV(url) {
 function parsearCSV(texto) {
   const lineas = texto.trim().split(/\r?\n/);
   const encabezados = dividirLineaCSV(lineas[0]);
-  return lineas.slice(1).filter(l => l.trim() !== "").map(linea => {
-    const valores = dividirLineaCSV(linea);
-    const objeto = {};
-    encabezados.forEach((h, i) => objeto[h.trim()] = (valores[i] || "").trim());
-    return objeto;
-  });
+
+  return lineas
+    .slice(1)
+    .filter(linea => linea.trim() !== "")
+    .map(linea => {
+      const valores = dividirLineaCSV(linea);
+      const objeto = {};
+
+      encabezados.forEach((encabezado, indice) => {
+        objeto[encabezado.trim()] = (valores[indice] || "").trim();
+      });
+
+      return objeto;
+    });
 }
 
 function dividirLineaCSV(linea) {
@@ -95,6 +188,7 @@ function dividirLineaCSV(linea) {
 
   for (let i = 0; i < linea.length; i++) {
     const caracter = linea[i];
+
     if (caracter === '"') {
       if (entreComillas && linea[i + 1] === '"') {
         actual += '"';
@@ -109,12 +203,17 @@ function dividirLineaCSV(linea) {
       actual += caracter;
     }
   }
+
   resultado.push(actual);
   return resultado;
 }
 
 function normalizar(texto) {
-  return (texto || "").toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  return (texto || "")
+    .toString()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 }
 
 function render() {
@@ -128,16 +227,17 @@ function render() {
     normalizar(Object.values(m).join(" ")).includes(consulta)
   );
 
-document.getElementById("tabla-tesis").innerHTML = tesisFiltradas.map(t => `
-  <tr>
-    <td>${t.numero_tesis || ""}</td>
-    <td>${t.nombre_tesis || ""}</td>
-    <td>${t.nombre_titulado || ""}</td>
-    <td>${t.carrera || ""}</td>
-    <td>${t.anio || ""}</td>
-    <td>${t.ubicacion || ""}</td>
-  </tr>
-`).join("");
+  document.getElementById("tabla-tesis").innerHTML = tesisFiltradas.map(t => `
+    <tr>
+      <td>${t.numero_tesis || ""}</td>
+      <td>${t.nombre_tesis || ""}</td>
+      <td>${t.nombre_titulado || ""}</td>
+      <td>${t.carrera || ""}</td>
+      <td>${t.anio || ""}</td>
+      <td>${t.ubicacion || ""}</td>
+    </tr>
+  `).join("");
+
   document.getElementById("tabla-mapas").innerHTML = mapasFiltrados.map(m => `
     <tr>
       <td>${m.clave_mapa || ""}</td>
@@ -148,31 +248,39 @@ document.getElementById("tabla-tesis").innerHTML = tesisFiltradas.map(t => `
 
   document.getElementById("estado-tesis").textContent =
     `${tesisFiltradas.length} tesis encontradas`;
+
   document.getElementById("estado-mapas").textContent =
     `${mapasFiltrados.length} mapas encontrados`;
 }
 
-function showTab(tab) {
-  document.getElementById("seccion-tesis").style.display = tab === "tesis" ? "block" : "none";
-  document.getElementById("seccion-mapas").style.display = tab === "mapas" ? "block" : "none";
+function showTab(tab, boton) {
+  document.getElementById("seccion-tesis").style.display =
+    tab === "tesis" ? "block" : "none";
+
+  document.getElementById("seccion-mapas").style.display =
+    tab === "mapas" ? "block" : "none";
 
   document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
-  event.target.classList.add("active");
+  boton.classList.add("active");
 }
 
 (async function iniciar() {
   try {
     tesis = await cargarCSV(URL_TESIS);
-    document.getElementById("estado-tesis").textContent = `${tesis.length} tesis cargadas`;
-  } catch (e) {
-    document.getElementById("estado-tesis").textContent = "Error al cargar la hoja de tesis.";
+    document.getElementById("estado-tesis").textContent =
+      `${tesis.length} tesis cargadas`;
+  } catch (error) {
+    document.getElementById("estado-tesis").textContent =
+      "Error al cargar la hoja de tesis. Revisa que la URL CSV sea correcta.";
   }
 
   try {
     mapas = await cargarCSV(URL_MAPAS);
-    document.getElementById("estado-mapas").textContent = `${mapas.length} mapas cargados`;
-  } catch (e) {
-    document.getElementById("estado-mapas").textContent = "Error al cargar la hoja de mapas.";
+    document.getElementById("estado-mapas").textContent =
+      `${mapas.length} mapas cargados`;
+  } catch (error) {
+    document.getElementById("estado-mapas").textContent =
+      "Error al cargar la hoja de mapas. Revisa que la URL CSV sea correcta.";
   }
 
   render();
