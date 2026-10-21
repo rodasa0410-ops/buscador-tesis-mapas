@@ -410,8 +410,8 @@
 
   <script>
     // Coloca aquí los enlaces publicados en formato CSV.
-    const URL_TESIS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTGPGsoufXmVyYnyeAbPBFEoBVp-_7Q3R45Hr4lOs_FaWdAWmSkXPIkwskHt5hRRw/pub?output=csv";
-    const URL_MAPAS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTpgYSzQaFIQhRiu6jgT7Du92QuFuXPf5-34QCuq8Yv_ZO3qlQzNh6bh9P4GT3_qeKMN03YzTAl4kRk/pub?gid=0&single=true&output=csv";
+    const URL_TESIS = "PEGA_AQUI_LA_URL_CSV_DE_TESIS";
+    const URL_MAPAS = "PEGA_AQUI_LA_URL_CSV_DE_MAPAS";
 
     const CAMPOS_TESIS = [
       "numero_tesis",
@@ -449,18 +449,18 @@
       return String(valor ?? "")
         .toLowerCase()
         .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/\s+/g, " ")
+        .replace(/[̀-ͯ]/g, "")
+        .replace(/s+/g, " ")
         .trim();
     }
 
     function normalizarEncabezado(valor) {
-      return normalizar(valor).replace(/\s+/g, "_");
+      return normalizar(valor).replace(/s+/g, "_");
     }
 
     // Lee comas, comillas escapadas y saltos de línea dentro de celdas.
     function parsearCSV(texto) {
-      const contenido = texto.replace(/^\uFEFF/, "");
+      const contenido = texto.replace(/^﻿/, "");
       const filas = [];
       let fila = [];
       let celda = "";
@@ -480,10 +480,14 @@
           fila.push(celda);
           celda = "";
         } else if (
-          (caracter === "\n" || caracter === "\r") &&
+          (caracter === "
+" || caracter === "
+") &&
           !entreComillas
         ) {
-          if (caracter === "\r" && contenido[i + 1] === "\n") {
+          if (caracter === "
+" && contenido[i + 1] === "
+") {
             i++;
           }
 
@@ -547,7 +551,7 @@
 
       const texto = await respuesta.text();
 
-      if (/^\s*</.test(texto)) {
+      if (/^s*</.test(texto)) {
         throw new Error(
           "El enlace devolvió una página HTML. Usa el enlace publicado como CSV."
         );
@@ -671,4 +675,135 @@
       }
     }
 
-    function render()
+    function render() {
+      const busqueda = normalizar(
+        document.getElementById("buscador").value
+      );
+
+      const titulo = normalizar(
+        document.getElementById("filtro-titulo").value
+      );
+
+      const carrera =
+        document.getElementById("filtro-carrera").value;
+
+      const tipoMapa =
+        document.getElementById("filtro-tipo-mapa").value;
+
+      const escala =
+        document.getElementById("filtro-escala").value;
+
+      const tesisFiltradas = catalogos.tesis.datos.filter(t => {
+        const coincideBusqueda = normalizar(
+          Object.values(t).join(" ")
+        ).includes(busqueda);
+
+        const coincideTitulo =
+          normalizar(t.nombre_tesis).includes(titulo);
+
+        const coincideCarrera =
+          !carrera || normalizar(t.carrera) === carrera;
+
+        return coincideBusqueda && coincideTitulo && coincideCarrera;
+      });
+
+      const mapasFiltrados = catalogos.mapas.datos.filter(m => {
+        const coincideBusqueda = normalizar(
+          Object.values(m).join(" ")
+        ).includes(busqueda);
+
+        const coincideTipo =
+          !tipoMapa || normalizar(m.tipo_mapa) === tipoMapa;
+
+        const coincideEscala =
+          !escala || normalizar(m.escala) === escala;
+
+        return coincideBusqueda && coincideTipo && coincideEscala;
+      });
+
+      mostrarTabla(
+        "tabla-tesis",
+        tesisFiltradas,
+        CAMPOS_TESIS,
+        catalogos.tesis.cargando
+          ? "Cargando catálogo..."
+          : catalogos.tesis.error
+            ? "Catálogo no disponible."
+            : "No hay tesis que coincidan con los filtros."
+      );
+
+      mostrarTabla(
+        "tabla-mapas",
+        mapasFiltrados,
+        CAMPOS_MAPAS,
+        catalogos.mapas.cargando
+          ? "Cargando catálogo..."
+          : catalogos.mapas.error
+            ? "Catálogo no disponible."
+            : "No hay mapas que coincidan con los filtros."
+      );
+
+      actualizarEstado("tesis", tesisFiltradas.length);
+      actualizarEstado("mapas", mapasFiltrados.length);
+    }
+
+    function mostrarCatalogo(tipo) {
+      catalogoActivo = tipo;
+
+      ["tesis", "mapas"].forEach(nombre => {
+        const activo = nombre === tipo;
+
+        document.getElementById("seccion-" + nombre).hidden = !activo;
+        document.getElementById("filtros-" + nombre).hidden = !activo;
+
+        const boton = document.getElementById("boton-" + nombre);
+        boton.classList.toggle("active", activo);
+        boton.setAttribute("aria-pressed", String(activo));
+      });
+
+      const buscador = document.getElementById("buscador");
+      buscador.value = "";
+      buscador.placeholder = `Buscar en el catálogo de ${tipo}...`;
+
+      render();
+    }
+
+    function limpiarFiltros() {
+      document.getElementById("buscador").value = "";
+
+      const ids = catalogoActivo === "tesis"
+        ? ["filtro-titulo", "filtro-carrera"]
+        : ["filtro-tipo-mapa", "filtro-escala"];
+
+      ids.forEach(id => {
+        document.getElementById(id).value = "";
+      });
+
+      render();
+    }
+
+    async function cargarCatalogo(tipo, url, campos) {
+      const catalogo = catalogos[tipo];
+
+      try {
+        catalogo.datos = await cargarCSV(url, campos);
+        cargarFiltros(tipo);
+      } catch (error) {
+        catalogo.error =
+          `Error al cargar ${tipo}: ${error.message} ` +
+          "Revisa el enlace CSV y los permisos de publicación.";
+      } finally {
+        catalogo.cargando = false;
+        render();
+      }
+    }
+
+    render();
+
+    Promise.all([
+      cargarCatalogo("tesis", URL_TESIS, CAMPOS_TESIS),
+      cargarCatalogo("mapas", URL_MAPAS, CAMPOS_MAPAS)
+    ]);
+  </script>
+</body>
+  </html>
