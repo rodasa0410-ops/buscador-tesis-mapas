@@ -1,183 +1,1168 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Buscador de Tesis y Mapas</title>
-<style>
-  body { font-family: Arial, sans-serif; margin: 0; background: #f4f6f8; color: #222; }
-  header { background: #123c69; color: #fff; padding: 20px; text-align: center; }
-  main { max-width: 1000px; margin: 20px auto; padding: 0 15px; }
-  .tabs { display: flex; gap: 10px; margin-bottom: 15px; }
-  button.tab { padding: 10px 18px; border: none; border-radius: 8px; cursor: pointer; background: #dfe6ee; }
-  button.tab.active { background: #123c69; color: #fff; }
-  input, select { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ccc; border-radius: 8px; }
-  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; }
-  th, td { padding: 10px; border-bottom: 1px solid #e3e3e3; text-align: left; }
-  th { background: #123c69; color: #fff; }
-  .status { margin: 10px 0; font-size: 14px; }
-</style>
-</head>
-<body>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<header>
-  <h1>Buscador de Tesis y Mapas</h1>
-</header>
+  <title>Biblioteca | Buscador de Tesis y Mapas</title>
 
-<main>
-  <div class="tabs">
-    <button class="tab active" onclick="showTab('tesis')">Tesis</button>
-    <button class="tab" onclick="showTab('mapas')">Mapas</button>
-  </div>
-
-  <input id="buscador" type="search" placeholder="Buscar por número, título, carrera, año, clave, estado o ubicación..." oninput="render()">
-
-  <div id="seccion-tesis">
-    <div class="status" id="estado-tesis">Cargando tesis...</div>
-    <table>
-      <thead>
-        <tr>
-          <th>Número de tesis</th>
-          <th>Nombre de tesis</th>
-          <th>Carrera</th>
-          <th>Año</th>
-          <th>Ubicación</th>
-        </tr>
-      </thead>
-      <tbody id="tabla-tesis"></tbody>
-    </table>
-  </div>
-
-  <div id="seccion-mapas" style="display:none">
-    <div class="status" id="estado-mapas">Cargando mapas...</div>
-    <table>
-      <thead>
-        <tr>
-          <th>Clave del mapa</th>
-          <th>Estado</th>
-          <th>Ubicación</th>
-        </tr>
-      </thead>
-      <tbody id="tabla-mapas"></tbody>
-    </table>
-  </div>
-</main>
-
-<script>
-// SUSTITUYE ESTAS URLS por las de "Publicar en la web" como CSV
-const URL_TESIS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTGPGsoufXmVyYnyeAbPBFEoBVp-_7Q3R45Hr4lOs_FaWdAWmSkXPIkwskHt5hRRw/pub?output=csv";
-const URL_MAPAS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTpgYSzQaFIQhRiu6jgT7Du92QuFuXPf5-34QCuq8Yv_ZO3qlQzNh6bh9P4GT3_qeKMN03YzTAl4kRk/pub?output=csv";
-
-let tesis = [];
-let mapas = [];
-
-async function cargarCSV(url) {
-  const respuesta = await fetch(url);
-  const texto = await respuesta.text();
-  return parsearCSV(texto);
-}
-
-function parsearCSV(texto) {
-  const lineas = texto.trim().split(/\r?\n/);
-  const encabezados = dividirLineaCSV(lineas[0]);
-  return lineas.slice(1).filter(l => l.trim() !== "").map(linea => {
-    const valores = dividirLineaCSV(linea);
-    const objeto = {};
-    encabezados.forEach((h, i) => objeto[h.trim()] = (valores[i] || "").trim());
-    return objeto;
-  });
-}
-
-function dividirLineaCSV(linea) {
-  const resultado = [];
-  let actual = "";
-  let entreComillas = false;
-
-  for (let i = 0; i < linea.length; i++) {
-    const caracter = linea[i];
-    if (caracter === '"') {
-      if (entreComillas && linea[i + 1] === '"') {
-        actual += '"';
-        i++;
-      } else {
-        entreComillas = !entreComillas;
-      }
-    } else if (caracter === "," && !entreComillas) {
-      resultado.push(actual);
-      actual = "";
-    } else {
-      actual += caracter;
+  <style>
+    :root {
+      --azul: #2146b5;
+      --azul-oscuro: #142b70;
+      --azul-claro: #edf2ff;
+      --plata: #cbd0d8;
+      --fondo: #f2f4f8;
+      --texto: #243047;
+      --secundario: #526079;
+      --blanco: #fff;
+      --borde: #dce1e9;
+      --error: #9b241c;
     }
-  }
-  resultado.push(actual);
-  return resultado;
-}
 
-function normalizar(texto) {
-  return (texto || "").toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-}
+    * {
+      box-sizing: border-box;
+    }
 
-function render() {
-  const consulta = normalizar(document.getElementById("buscador").value);
+    body {
+      margin: 0;
+      background: var(--fondo);
+      color: var(--texto);
+      font-family: "Segoe UI", Arial, sans-serif;
+      line-height: 1.5;
+    }
 
-  const tesisFiltradas = tesis.filter(t =>
-    normalizar(Object.values(t).join(" ")).includes(consulta)
-  );
+    button,
+    input,
+    select {
+      font: inherit;
+    }
 
-  const mapasFiltrados = mapas.filter(m =>
-    normalizar(Object.values(m).join(" ")).includes(consulta)
-  );
+    button {
+      cursor: pointer;
+    }
 
-  document.getElementById("tabla-tesis").innerHTML = tesisFiltradas.map(t => `
-    <tr>
-      <td>${t.numero_tesis || ""}</td>
-      <td>${t.nombre_tesis || ""}</td>
-      <td>${t.carrera || ""}</td>
-      <td>${t.anio || ""}</td>
-      <td>${t.ubicacion || ""}</td>
-    </tr>
-  `).join("");
+    button:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
 
-  document.getElementById("tabla-mapas").innerHTML = mapasFiltrados.map(m => `
-    <tr>
-      <td>${m.clave_mapa || ""}</td>
-      <td>${m.estado || ""}</td>
-      <td>${m.ubicacion || ""}</td>
-    </tr>
-  `).join("");
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    a:focus-visible,
+    [tabindex]:focus-visible {
+      outline: 3px solid #91adfa;
+      outline-offset: 3px;
+    }
 
-  document.getElementById("estado-tesis").textContent =
-    `${tesisFiltradas.length} tesis encontradas`;
-  document.getElementById("estado-mapas").textContent =
-    `${mapasFiltrados.length} mapas encontrados`;
-}
+    [hidden] {
+      display: none !important;
+    }
 
-function showTab(tab) {
-  document.getElementById("seccion-tesis").style.display = tab === "tesis" ? "block" : "none";
-  document.getElementById("seccion-mapas").style.display = tab === "mapas" ? "block" : "none";
+    .saltar {
+      position: absolute;
+      top: -100px;
+      left: 16px;
+      z-index: 10;
+      padding: 12px;
+      background: white;
+      color: var(--azul-oscuro);
+    }
 
-  document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
-  event.target.classList.add("active");
-}
+    .saltar:focus {
+      top: 12px;
+    }
 
-(async function iniciar() {
-  try {
-    tesis = await cargarCSV(URL_TESIS);
-    document.getElementById("estado-tesis").textContent = `${tesis.length} tesis cargadas`;
-  } catch (e) {
-    document.getElementById("estado-tesis").textContent = "Error al cargar la hoja de tesis.";
-  }
+    header {
+      background: linear-gradient(
+        125deg,
+        var(--azul),
+        var(--azul-oscuro)
+      );
+      color: white;
+      border-bottom: 5px solid var(--plata);
+    }
 
-  try {
-    mapas = await cargarCSV(URL_MAPAS);
-    document.getElementById("estado-mapas").textContent = `${mapas.length} mapas cargados`;
-  } catch (e) {
-    document.getElementById("estado-mapas").textContent = "Error al cargar la hoja de mapas.";
-  }
+    .encabezado {
+      max-width: 1240px;
+      margin: auto;
+      padding: 22px 20px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
 
-  render();
-})();
-</script>
+    /* Solo se ajusta el tamaño; no se altera la imagen. */
+    .logo {
+      display: block;
+      width: 110px;
+      height: auto;
+      flex-shrink: 0;
+    }
 
+    h1 {
+      margin: 0;
+      font-size: clamp(22px, 3vw, 32px);
+      line-height: 1.2;
+    }
+
+    .encabezado p {
+      margin: 9px 0 0;
+      color: #e4eaff;
+    }
+
+    main {
+      max-width: 1240px;
+      margin: 26px auto;
+      padding: 0 20px;
+    }
+
+    .bienvenida {
+      margin-bottom: 20px;
+    }
+
+    .bienvenida h2 {
+      margin: 0 0 5px;
+      color: var(--azul-oscuro);
+      font-size: 22px;
+    }
+
+    .bienvenida p {
+      margin: 0;
+      color: var(--secundario);
+    }
+
+    .pestanas {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .pestana {
+      min-height: 48px;
+      padding: 11px 26px;
+      border: 1px solid var(--plata);
+      border-radius: 12px;
+      background: #e1e5ec;
+      color: var(--azul-oscuro);
+      font-weight: 600;
+    }
+
+    .pestana[aria-pressed="true"] {
+      border-color: var(--azul);
+      background: var(--azul);
+      color: white;
+      box-shadow: 0 4px 10px rgb(33 70 181 / 18%);
+    }
+
+    .tarjeta {
+      background: white;
+      border: 1px solid var(--borde);
+      border-radius: 16px;
+      box-shadow: 0 4px 18px rgb(20 43 112 / 5%);
+    }
+
+    .filtros {
+      padding: 22px;
+      margin-bottom: 20px;
+    }
+
+    .rejilla {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .campo-general {
+      margin-top: 18px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--azul-oscuro);
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    input,
+    select {
+      width: 100%;
+      min-height: 48px;
+      padding: 11px 13px;
+      border: 1px solid #bac4d3;
+      border-radius: 10px;
+      background: white;
+      color: var(--texto);
+    }
+
+    input::placeholder {
+      color: #647187;
+    }
+
+    .ayuda {
+      margin: 8px 0 0;
+      color: var(--secundario);
+      font-size: 13px;
+    }
+
+    .acciones {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .boton {
+      min-height: 44px;
+      padding: 10px 16px;
+      border: 1px solid var(--plata);
+      border-radius: 10px;
+      background: #edf0f5;
+      color: var(--azul-oscuro);
+      font-weight: 600;
+    }
+
+    .boton:hover:not(:disabled) {
+      background: #dfe6f3;
+    }
+
+    .boton-principal {
+      background: var(--azul);
+      border-color: var(--azul);
+      color: white;
+    }
+
+    .boton-principal:hover:not(:disabled) {
+      background: var(--azul-oscuro);
+    }
+
+    .resultados {
+      padding: 22px;
+    }
+
+    .titulo-resultados {
+      margin: 0 0 14px;
+      font-size: 21px;
+      color: var(--azul-oscuro);
+    }
+
+    .estado {
+      margin: 0 0 16px;
+      padding: 12px 14px;
+      border-left: 5px solid var(--azul);
+      border-radius: 8px;
+      background: var(--azul-claro);
+      color: var(--azul-oscuro);
+    }
+
+    .estado.error {
+      border-left-color: var(--error);
+      background: #fff1f0;
+      color: var(--error);
+    }
+
+    .tabla-contenedor {
+      overflow-x: auto;
+      border: 1px solid var(--borde);
+      border-radius: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      padding: 14px 12px;
+      text-align: left;
+      vertical-align: top;
+      font-size: 14px;
+    }
+
+    th {
+      background: var(--azul);
+      color: white;
+      white-space: nowrap;
+    }
+
+    td {
+      border-bottom: 1px solid var(--borde);
+      overflow-wrap: anywhere;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #f5f7fb;
+    }
+
+    tbody tr:hover {
+      background: var(--azul-claro);
+    }
+
+    tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .vacio {
+      padding: 32px 18px;
+      text-align: center;
+      color: var(--secundario);
+    }
+
+    .paginacion {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .controles-pagina {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .pagina-texto {
+      color: var(--secundario);
+      font-size: 14px;
+    }
+
+    footer {
+      padding: 26px 16px;
+      text-align: center;
+      color: var(--secundario);
+      font-size: 13px;
+    }
+
+    @media (max-width: 720px) {
+      .encabezado {
+        padding: 18px 14px;
+        gap: 12px;
+      }
+
+      .logo {
+        width: 76px;
+      }
+
+      h1 {
+        font-size: 21px;
+      }
+
+      .encabezado p {
+        font-size: 13px;
+      }
+
+      main {
+        padding: 0 12px;
+        margin-top: 20px;
+      }
+
+      .rejilla {
+        grid-template-columns: 1fr;
+      }
+
+      .pestana {
+        flex: 1;
+        padding: 12px;
+      }
+
+      .filtros,
+      .resultados {
+        padding: 16px;
+      }
+
+      table {
+        min-width: 680px;
+      }
+
+      .acciones .boton {
+        flex: 1;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <a class="saltar" href="#contenido">Ir al buscador</a>
+
+  <header>
+    <div class="encabezado">
+      <img
+        class="logo"
+        src="./logo-biblioteca.jpeg"
+        alt="Logo de la Biblioteca Ing. Daniel Gutiérrez Gutiérrez"
+      >
+
+      <div>
+        <h1>Buscador de Tesis y Mapas</h1>
+        <p>Biblioteca · Consulta del catálogo y ubicación de materiales</p>
+      </div>
+    </div>
+  </header>
+
+  <main id="contenido">
+    <section class="bienvenida" aria-labelledby="titulo-bienvenida">
+      <h2 id="titulo-bienvenida">Encuentra el material que necesitas</h2>
+      <p>
+        Elige un catálogo y utiliza uno o varios filtros para facilitar
+        tu consulta.
+      </p>
+    </section>
+
+    <nav class="pestanas" aria-label="Seleccionar catálogo">
+      <button
+        id="boton-tesis"
+        class="pestana"
+        type="button"
+        aria-pressed="true"
+        aria-controls="panel-tesis"
+      >
+        Tesis
+      </button>
+
+      <button
+        id="boton-mapas"
+        class="pestana"
+        type="button"
+        aria-pressed="false"
+        aria-controls="panel-mapas"
+      >
+        Mapas
+      </button>
+    </nav>
+
+    <section id="panel-tesis" aria-label="Catálogo de tesis">
+      <div class="tarjeta filtros">
+        <div class="rejilla">
+          <div>
+            <label for="titulo-tesis">Título de la tesis</label>
+            <input
+              id="titulo-tesis"
+              type="search"
+              placeholder="Escribe una palabra o parte del título"
+            >
+          </div>
+
+          <div>
+            <label for="carrera-tesis">Carrera</label>
+            <select id="carrera-tesis">
+              <option value="">Todas las carreras</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="campo-general">
+          <label for="busqueda-tesis">Búsqueda general en tesis</label>
+          <input
+            id="busqueda-tesis"
+            type="search"
+            placeholder="Número, título, titulado, carrera, año o ubicación"
+            aria-describedby="ayuda-tesis"
+          >
+          <p id="ayuda-tesis" class="ayuda">
+            Puedes combinar los filtros. No es necesario escribir acentos
+            ni distinguir mayúsculas.
+          </p>
+        </div>
+
+        <div class="acciones">
+          <button id="limpiar-tesis" class="boton" type="button">
+            Limpiar filtros
+          </button>
+          <button
+            id="actualizar-tesis"
+            class="boton boton-principal"
+            type="button"
+          >
+            Actualizar datos
+          </button>
+        </div>
+      </div>
+
+      <div class="tarjeta resultados">
+        <h2 class="titulo-resultados">Tesis disponibles</h2>
+
+        <p
+          id="estado-tesis"
+          class="estado"
+          role="status"
+          aria-live="polite"
+        >
+          Cargando catálogo...
+        </p>
+
+        <div
+          class="tabla-contenedor"
+          tabindex="0"
+          role="region"
+          aria-label="Tabla de tesis; desplazable horizontalmente en celular"
+        >
+          <table aria-label="Resultados de tesis">
+            <thead>
+              <tr>
+                <th scope="col">Número de tesis</th>
+                <th scope="col">Nombre de tesis</th>
+                <th scope="col">Nombre del titulado</th>
+                <th scope="col">Carrera</th>
+                <th scope="col">Año</th>
+                <th scope="col">Ubicación</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-tesis"></tbody>
+          </table>
+        </div>
+
+        <div id="paginacion-tesis" class="paginacion" hidden>
+          <span id="rango-tesis" class="pagina-texto"></span>
+
+          <div class="controles-pagina">
+            <button id="anterior-tesis" class="boton" type="button">
+              Anterior
+            </button>
+            <span id="pagina-tesis" class="pagina-texto"></span>
+            <button id="siguiente-tesis" class="boton" type="button">
+              Siguiente
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="panel-mapas" aria-label="Catálogo de mapas" hidden>
+      <div class="tarjeta filtros">
+        <div class="rejilla">
+          <div>
+            <label for="tipo-mapas">Tipo de mapa</label>
+            <select id="tipo-mapas">
+              <option value="">Todos los tipos de mapa</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="escala-mapas">Escala</label>
+            <select id="escala-mapas">
+              <option value="">Todas las escalas</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="campo-general">
+          <label for="busqueda-mapas">Búsqueda general en mapas</label>
+          <input
+            id="busqueda-mapas"
+            type="search"
+            placeholder="Clave, tipo de mapa, escala, estado o ubicación"
+            aria-describedby="ayuda-mapas"
+          >
+          <p id="ayuda-mapas" class="ayuda">
+            Selecciona un tipo y una escala, o escribe el estado que buscas.
+          </p>
+        </div>
+
+        <div class="acciones">
+          <button id="limpiar-mapas" class="boton" type="button">
+            Limpiar filtros
+          </button>
+          <button
+            id="actualizar-mapas"
+            class="boton boton-principal"
+            type="button"
+          >
+            Actualizar datos
+          </button>
+        </div>
+      </div>
+
+      <div class="tarjeta resultados">
+        <h2 class="titulo-resultados">Mapas disponibles</h2>
+
+        <p
+          id="estado-mapas"
+          class="estado"
+          role="status"
+          aria-live="polite"
+        >
+          Cargando catálogo...
+        </p>
+
+        <div
+          class="tabla-contenedor"
+          tabindex="0"
+          role="region"
+          aria-label="Tabla de mapas; desplazable horizontalmente en celular"
+        >
+          <table aria-label="Resultados de mapas">
+            <thead>
+              <tr>
+                <th scope="col">Clave del mapa</th>
+                <th scope="col">Tipo de mapa</th>
+                <th scope="col">Escala</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Ubicación</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-mapas"></tbody>
+          </table>
+        </div>
+
+        <div id="paginacion-mapas" class="paginacion" hidden>
+          <span id="rango-mapas" class="pagina-texto"></span>
+
+          <div class="controles-pagina">
+            <button id="anterior-mapas" class="boton" type="button">
+              Anterior
+            </button>
+            <span id="pagina-mapas" class="pagina-texto"></span>
+            <button id="siguiente-mapas" class="boton" type="button">
+              Siguiente
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    Biblioteca · Catálogo de tesis y mapas
+  </footer>
+
+  <script>
+    "use strict";
+
+    // REEMPLAZA ESTOS DOS VALORES CON TUS ENLACES CSV.
+    const URL_TESIS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTGPGsoufXmVyYnyeAbPBFEoBVp-_7Q3R45Hr4lOs_FaWdAWmSkXPIkwskHt5hRRw/pub?output=csv";
+    const URL_MAPAS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTpgYSzQaFIQhRiu6jgT7Du92QuFuXPf5-34QCuq8Yv_ZO3qlQzNh6bh9P4GT3_qeKMN03YzTAl4kRk/pub?output=csv";
+
+    const REGISTROS_POR_PAGINA = 25;
+
+    const $ = id => document.getElementById(id);
+
+    const configuracion = {
+      tesis: {
+        url: URL_TESIS,
+        campos: [
+          "numero_tesis",
+          "nombre_tesis",
+          "nombre_titulado",
+          "carrera",
+          "anio",
+          "ubicacion"
+        ],
+        filtros: [
+          "titulo-tesis",
+          "carrera-tesis",
+          "busqueda-tesis"
+        ]
+      },
+      mapas: {
+        url: URL_MAPAS,
+        campos: [
+          "clave_mapa",
+          "tipo_mapa",
+          "escala",
+          "estado",
+          "ubicacion"
+        ],
+        filtros: [
+          "tipo-mapas",
+          "escala-mapas",
+          "busqueda-mapas"
+        ]
+      }
+    };
+
+    const estado = {
+      tesis: {
+        datos: [],
+        cargando: true,
+        error: "",
+        pagina: 1
+      },
+      mapas: {
+        datos: [],
+        cargando: true,
+        error: "",
+        pagina: 1
+      }
+    };
+
+    function normalizar(valor) {
+      return String(valor ?? "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function normalizarEncabezado(valor) {
+      return normalizar(valor).replace(/\s+/g, "_");
+    }
+
+    function claveEscala(valor) {
+      return normalizar(valor).replace(/[\s,.]/g, "");
+    }
+
+    function coincideBusqueda(texto, consulta) {
+      const palabras = normalizar(consulta).split(" ").filter(Boolean);
+      return palabras.every(palabra => texto.includes(palabra));
+    }
+
+    // Admite comas, saltos de línea y comillas escapadas en las celdas.
+    function parsearCSV(texto) {
+      const contenido = texto.replace(/^\uFEFF/, "");
+      const filas = [];
+
+      let fila = [];
+      let celda = "";
+      let entreComillas = false;
+
+      function guardarFila() {
+        fila.push(celda);
+
+        if (fila.some(valor => valor.trim() !== "")) {
+          filas.push(fila);
+        }
+
+        fila = [];
+        celda = "";
+      }
+
+      for (let i = 0; i < contenido.length; i++) {
+        const caracter = contenido[i];
+
+        if (caracter === '"') {
+          if (entreComillas && contenido[i + 1] === '"') {
+            celda += '"';
+            i++;
+          } else if (entreComillas || celda.length === 0) {
+            entreComillas = !entreComillas;
+          } else {
+            celda += caracter;
+          }
+        } else if (caracter === "," && !entreComillas) {
+          fila.push(celda);
+          celda = "";
+        } else if (
+          (caracter === "\n" || caracter === "\r") &&
+          !entreComillas
+        ) {
+          if (caracter === "\r" && contenido[i + 1] === "\n") {
+            i++;
+          }
+
+          guardarFila();
+        } else {
+          celda += caracter;
+        }
+      }
+
+      if (entreComillas) {
+        throw new Error("El archivo CSV contiene comillas sin cerrar.");
+      }
+
+      guardarFila();
+
+      if (filas.length === 0) {
+        throw new Error("La hoja está vacía.");
+      }
+
+      const encabezados = filas.shift().map(normalizarEncabezado);
+
+      if (encabezados.some(campo => campo === "")) {
+        throw new Error("Hay columnas sin encabezado.");
+      }
+
+      if (new Set(encabezados).size !== encabezados.length) {
+        throw new Error("Hay encabezados duplicados.");
+      }
+
+      const datos = filas.map((valores, indice) => {
+        if (valores.length !== encabezados.length) {
+          throw new Error(
+            `El registro ${indice + 1} no coincide con el número de columnas.`
+          );
+        }
+
+        return Object.fromEntries(
+          encabezados.map((campo, posicion) => [
+            campo,
+            valores[posicion].trim()
+          ])
+        );
+      });
+
+      return { encabezados, datos };
+    }
+
+    async function descargarDatos(url, campos) {
+      let direccion;
+
+      try {
+        direccion = new URL(url);
+      } catch {
+        throw new Error(
+          "Falta configurar un enlace CSV válido para este catálogo."
+        );
+      }
+
+      if (!["http:", "https:"].includes(direccion.protocol)) {
+        throw new Error("El enlace debe comenzar con https:// o http://.");
+      }
+
+      const controlador = new AbortController();
+
+      const temporizador = setTimeout(() => {
+        controlador.abort();
+      }, 30000);
+
+      try {
+        const respuesta = await fetch(direccion.href, {
+          signal: controlador.signal,
+          cache: "no-store"
+        });
+
+        if (!respuesta.ok) {
+          throw new Error(
+            `No se pudo descargar la hoja. Código HTTP ${respuesta.status}.`
+          );
+        }
+
+        const texto = await respuesta.text();
+
+        if (/^\s*(?:<!doctype\s+html|<html|<head|<body)/i.test(texto)) {
+          throw new Error(
+            "El enlace abre una página web, no un CSV. " +
+            "Usa el enlace de la hoja publicada en formato CSV."
+          );
+        }
+
+        const resultado = parsearCSV(texto);
+
+        const faltantes = campos.filter(
+          campo => !resultado.encabezados.includes(campo)
+        );
+
+        if (faltantes.length > 0) {
+          throw new Error(
+            "Faltan estas columnas: " + faltantes.join(", ") + "."
+          );
+        }
+
+        return resultado.datos
+          .map(fila => {
+            const valores = Object.fromEntries(
+              campos.map(campo => [campo, fila[campo] ?? ""])
+            );
+
+            return {
+              valores,
+              textoBusqueda: normalizar(
+                Object.values(valores).join(" ")
+              )
+            };
+          })
+          .filter(registro =>
+            Object.values(registro.valores).some(valor => valor !== "")
+          );
+      } finally {
+        clearTimeout(temporizador);
+      }
+    }
+
+    function llenarSelect(id, valores, textoInicial, obtenerClave = normalizar) {
+      const select = $(id);
+      const seleccionAnterior = select.value;
+      const opciones = new Map();
+
+      valores.forEach(valor => {
+        const etiqueta = String(valor ?? "").trim();
+        const clave = obtenerClave(etiqueta);
+
+        if (clave && !opciones.has(clave)) {
+          opciones.set(clave, etiqueta);
+        }
+      });
+
+      select.replaceChildren(new Option(textoInicial, ""));
+
+      [...opciones.entries()]
+        .sort((a, b) =>
+          a[1].localeCompare(b[1], "es", {
+            numeric: true,
+            sensitivity: "base"
+          })
+        )
+        .forEach(([clave, etiqueta]) => {
+          select.add(new Option(etiqueta, clave));
+        });
+
+      if (opciones.has(seleccionAnterior)) {
+        select.value = seleccionAnterior;
+      }
+    }
+
+    function actualizarOpciones(tipo) {
+      const datos = estado[tipo].datos.map(registro => registro.valores);
+
+      if (tipo === "tesis") {
+        llenarSelect(
+          "carrera-tesis",
+          datos.map(t => t.carrera),
+          "Todas las carreras"
+        );
+      } else {
+        llenarSelect(
+          "tipo-mapas",
+          datos.map(m => m.tipo_mapa),
+          "Todos los tipos de mapa"
+        );
+
+        llenarSelect(
+          "escala-mapas",
+          datos.map(m => m.escala),
+          "Todas las escalas",
+          claveEscala
+        );
+      }
+    }
+
+    function obtenerFiltrados(tipo) {
+      const consulta = $("busqueda-" + tipo).value;
+
+      if (tipo === "tesis") {
+        const titulo = normalizar($("titulo-tesis").value);
+        const carrera = $("carrera-tesis").value;
+
+        return estado.tesis.datos.filter(registro => {
+          const t = registro.valores;
+
+          return (
+            coincideBusqueda(registro.textoBusqueda, consulta) &&
+            coincideBusqueda(normalizar(t.nombre_tesis), titulo) &&
+            (!carrera || normalizar(t.carrera) === carrera)
+          );
+        });
+      }
+
+      const tipoMapa = $("tipo-mapas").value;
+      const escala = $("escala-mapas").value;
+
+      return estado.mapas.datos.filter(registro => {
+        const m = registro.valores;
+
+        return (
+          coincideBusqueda(registro.textoBusqueda, consulta) &&
+          (!tipoMapa || normalizar(m.tipo_mapa) === tipoMapa) &&
+          (!escala || claveEscala(m.escala) === escala)
+        );
+      });
+    }
+
+    function mostrarFilaVacia(tipo, mensaje) {
+      const fila = document.createElement("tr");
+      const celda = document.createElement("td");
+
+      celda.colSpan = configuracion[tipo].campos.length;
+      celda.className = "vacio";
+      celda.textContent = mensaje;
+
+      fila.appendChild(celda);
+      $("tabla-" + tipo).replaceChildren(fila);
+    }
+
+    function render(tipo) {
+      const actual = estado[tipo];
+      const mensaje = $("estado-" + tipo);
+      const actualizar = $("actualizar-" + tipo);
+      const paginacion = $("paginacion-" + tipo);
+
+      $("panel-" + tipo).setAttribute(
+        "aria-busy",
+        String(actual.cargando)
+      );
+
+      actualizar.disabled = actual.cargando;
+      actualizar.textContent = actual.cargando
+        ? "Actualizando..."
+        : "Actualizar datos";
+
+      mensaje.classList.toggle("error", Boolean(actual.error));
+
+      if (actual.cargando || actual.error) {
+        mensaje.textContent = actual.cargando
+          ? "Estamos cargando el catálogo. Espera un momento..."
+          : actual.error;
+
+        mostrarFilaVacia(
+          tipo,
+          actual.cargando
+            ? "Cargando materiales..."
+            : "No fue posible cargar el catálogo. Intenta actualizar los datos."
+        );
+
+        paginacion.hidden = true;
+        return;
+      }
+
+      const filtrados = obtenerFiltrados(tipo);
+      const total = filtrados.length;
+
+      const paginas = Math.max(
+        1,
+        Math.ceil(total / REGISTROS_POR_PAGINA)
+      );
+
+      actual.pagina = Math.min(
+        Math.max(1, actual.pagina),
+        paginas
+      );
+
+      const inicio = (actual.pagina - 1) * REGISTROS_POR_PAGINA;
+      const visibles = filtrados.slice(
+        inicio,
+        inicio + REGISTROS_POR_PAGINA
+      );
+
+      mensaje.textContent = actual.datos.length === 0
+        ? "La hoja está conectada, pero todavía no tiene materiales registrados."
+        : `${total} de ${actual.datos.length} registros coinciden con tu búsqueda.`;
+
+      if (total === 0) {
+        mostrarFilaVacia(
+          tipo,
+          actual.datos.length === 0
+            ? "Todavía no hay materiales registrados."
+            : "No encontramos coincidencias. Prueba otra palabra o limpia los filtros."
+        );
+      } else {
+        const fragmento = document.createDocumentFragment();
+
+        visibles.forEach(registro => {
+          const fila = document.createElement("tr");
+
+          configuracion[tipo].campos.forEach(campo => {
+            const celda = document.createElement("td");
+
+            // Los datos de la hoja se insertan como texto, no como HTML.
+            celda.textContent = registro.valores[campo] || "—";
+            fila.appendChild(celda);
+          });
+
+          fragmento.appendChild(fila);
+        });
+
+        $("tabla-" + tipo).replaceChildren(fragmento);
+      }
+
+      paginacion.hidden = total === 0;
+
+      $("rango-" + tipo).textContent =
+        `Mostrando ${inicio + 1}–${Math.min(
+          inicio + REGISTROS_POR_PAGINA,
+          total
+        )} de ${total}`;
+
+      $("pagina-" + tipo).textContent =
+        `Página ${actual.pagina} de ${paginas}`;
+
+      $("anterior-" + tipo).disabled = actual.pagina <= 1;
+      $("siguiente-" + tipo).disabled = actual.pagina >= paginas;
+    }
+
+    async function cargarCatalogo(tipo) {
+      const actual = estado[tipo];
+
+      actual.cargando = true;
+      actual.error = "";
+      render(tipo);
+
+      try {
+        actual.datos = await descargarDatos(
+          configuracion[tipo].url,
+          configuracion[tipo].campos
+        );
+
+        actual.pagina = 1;
+        actualizarOpciones(tipo);
+      } catch (error) {
+        if (error.name === "AbortError") {
+          actual.error =
+            "La conexión tardó demasiado. Intenta actualizar los datos.";
+        } else if (error instanceof TypeError) {
+          actual.error =
+            "No pudimos conectar con la hoja. Revisa tu conexión, " +
+            "el enlace CSV y los permisos de publicación.";
+        } else {
+          actual.error = "No se pudo cargar el catálogo: " + error.message;
+        }
+      } finally {
+        actual.cargando = false;
+        render(tipo);
+      }
+    }
+
+    function mostrarCatalogo(tipo) {
+      ["tesis", "mapas"].forEach(nombre => {
+        const seleccionado = nombre === tipo;
+
+        $("panel-" + nombre).hidden = !seleccionado;
+        $("boton-" + nombre).setAttribute(
+          "aria-pressed",
+          String(seleccionado)
+        );
+      });
+    }
+
+    function limpiarFiltros(tipo) {
+      configuracion[tipo].filtros.forEach(id => {
+        $(id).value = "";
+      });
+
+      estado[tipo].pagina = 1;
+      render(tipo);
+    }
+
+    ["tesis", "mapas"].forEach(tipo => {
+      $("boton-" + tipo).addEventListener("click", () => {
+        mostrarCatalogo(tipo);
+      });
+
+      configuracion[tipo].filtros.forEach(id => {
+        const elemento = $(id);
+        const evento = elemento.tagName === "SELECT" ? "change" : "input";
+
+        elemento.addEventListener(evento, () => {
+          estado[tipo].pagina = 1;
+          render(tipo);
+        });
+      });
+
+      $("limpiar-" + tipo).addEventListener("click", () => {
+        limpiarFiltros(tipo);
+      });
+
+      $("actualizar-" + tipo).addEventListener("click", () => {
+        cargarCatalogo(tipo);
+      });
+
+      $("anterior-" + tipo).addEventListener("click", () => {
+        estado[tipo].pagina--;
+        render(tipo);
+      });
+
+      $("siguiente-" + tipo).addEventListener("click", () => {
+        estado[tipo].pagina++;
+        render(tipo);
+      });
+
+      cargarCatalogo(tipo);
+    });
+  </script>
 </body>
 </html>
